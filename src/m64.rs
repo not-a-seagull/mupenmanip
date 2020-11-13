@@ -48,7 +48,7 @@ impl TryFrom<u16> for MovieStart {
 }
 
 /// Controller flags.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct ControllerFlags {
     pub is_present: bool,
     pub has_mempak: bool,
@@ -305,6 +305,17 @@ impl MHeader {
         b.put_slice(&self.author_name_ascii);
         b.put_slice(&self.author_desc_ascii);
         b
+    }
+
+    #[inline]
+    pub fn is_compatible_with(&self, other: &MHeader) -> Result<(), &'static str> {
+        if self.fps != other.fps {
+            Err("FPS is not equivalent")
+        } else if self.controller_flags != other.controller_flags {
+            Err("Controller data is not equivalent")
+        } else {
+            Ok(())
+        }
     }
 }
 

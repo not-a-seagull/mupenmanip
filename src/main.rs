@@ -50,6 +50,31 @@ fn main() {
                 .write_to(&mut outfile)
                 .expect("Failed to write to file");
         }
+        "concat" => {
+            let mut records: Vec<MRecord> = env::args().enumerate().skip(2).filter_map(|(i, r)| {
+                if i == env::args().count() - 1 {
+                    return None;
+                }
+                let (_, r) = open_record(i, "Shouldn't fail lol");
+                Some(r)
+            }).collect();
+
+            if records.len() > 3 {
+                panic!("There needs to be at least three records supplied to the concat statement")
+            }
+
+            let (_, mut outfile) = open_file(env::args().count() - 1, "Shouldn't fail lol", true);
+            
+            let mut outrecord = records.remove(0);
+            records.into_iter().for_each(|record| {
+                if let Err(e) = outrecord.header.is_compatible_with(&record.header) {
+                    panic!("Unable to merge headers: {}", e);
+                }
+                outrecord.header.frame_count += record.header.frame_count;
+                outrecord.frames.extend(record.frames);
+            });
+            outrecord.write_to(&mut outfile).expect("Failed to write to file");
+        }
         operation => {
             eprintln!("Unknown operation: {}", operation);
             process::exit(1);
